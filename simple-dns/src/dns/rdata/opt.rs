@@ -10,8 +10,8 @@ use crate::{
 use super::RR;
 
 pub mod masks {
-    pub const RCODE_MASK: u32 = 0b0000_0000_0000_0000_0000_0000_1111_1111;
-    pub const VERSION_MASK: u32 = 0b0000_0000_0000_0000_1111_1111_0000_0000;
+    pub const RCODE_MASK: u32 = 0xff00_0000;
+    pub const VERSION_MASK: u32 = 0x00ff_0000;
 }
 
 /// OPT is a pseudo-rr used to carry control information  
@@ -88,13 +88,13 @@ impl<'a> WireFormat<'a> for OPT<'a> {
 
 impl OPT<'_> {
     pub(crate) fn extract_rcode_from_ttl(ttl: u32, header: &Header) -> RCODE {
-        let mut rcode = (ttl & masks::RCODE_MASK) << 4;
-        rcode |= header.response_code as u32;
+        let mut rcode = ((ttl & masks::RCODE_MASK) >> 24) << 4;
+        rcode |= (header.response_code as u32) & 0x0f;
         RCODE::from(rcode as u16)
     }
 
     pub(crate) fn encode_ttl(&self, header: &Header) -> u32 {
-        let mut ttl: u32 = (header.response_code as u32 & masks::RCODE_MASK) >> 4;
+        let mut ttl = (((header.response_code as u32) >> 4) << 24) & masks::RCODE_MASK;
         ttl |= (self.version as u32) << masks::VERSION_MASK.trailing_zeros();
         ttl
     }
