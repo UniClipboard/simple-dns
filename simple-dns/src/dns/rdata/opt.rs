@@ -88,7 +88,12 @@ impl<'a> WireFormat<'a> for OPT<'a> {
 
 impl OPT<'_> {
     pub(crate) fn extract_rcode_from_ttl(ttl: u32, header: &Header) -> RCODE {
-        let mut rcode = ((ttl & masks::RCODE_MASK) >> 24) << 4;
+        let extended_rcode = (ttl & masks::RCODE_MASK) >> 24;
+        if extended_rcode == 0 {
+            // 头部未知错误码已折叠为 Reserved，保留分类而不重解释枚举判别值。
+            return header.response_code;
+        }
+        let mut rcode = extended_rcode << 4;
         rcode |= (header.response_code as u32) & 0x0f;
         RCODE::from(rcode as u16)
     }

@@ -96,3 +96,16 @@ fn captured_windows_response_is_successful() {
     assert_eq!(packet.answers.len(), 1);
     assert_eq!(packet.opt().unwrap().version, 0);
 }
+
+#[test]
+fn opt_preserves_reserved_header_response_codes() {
+    for code in 0..=15 {
+        for flags in [0, 1, 0x8000, 0xffff] {
+            let bytes = response(flags, code);
+            assert_eq!(
+                Packet::parse(&bytes).unwrap().rcode(),
+                RCODE::from(code as u16)
+            );
+        }
+    }
+}
